@@ -46,18 +46,19 @@ def flags():
 
     return vars(parser.parse_args())
 
-def read_config(config_file):
+def read_config(config_file, conf_section='Matrix'):
     """Reads a matrix config file.
 
     :param config_file: path to the config file
     :type config_file: str
+    :param conf_section: section of the config file to read
+    :type conf_section: str
     :return: config dictionary
     """
     if os.path.isfile(config_file) is False:
         logging.error('config file "%s" not found', config_file)
         sys.exit(19)
 
-    conf_section = 'Matrix'
     config = configparser.ConfigParser()
     config.read(config_file)
     return {key: value for key, value in config[conf_section].items()}
@@ -118,7 +119,7 @@ if __name__ == '__main__':
         log.set_log_level('DEBUG')
 
     else:
-        log.set_log_level('INFO')
+        log.set_log_level()
 
     logging = log.logging
     config = merge_config(args, read_config(args['config']))
