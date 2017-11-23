@@ -55,6 +55,7 @@ def read_config(config_file, conf_section='Matrix'):
     :type conf_section: str
     :return: config dictionary
     """
+    config_file = os.path.expanduser(config_file)
     if os.path.isfile(config_file) is False:
         print('config file "{0}" not found'.format(config_file))
         sys.exit(19)
