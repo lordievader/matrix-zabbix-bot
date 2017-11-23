@@ -56,10 +56,11 @@ def read_config(config_file, conf_section='Matrix'):
     :return: config dictionary
     """
     if os.path.isfile(config_file) is False:
-        logging.error('config file "%s" not found', config_file)
+        print('config file "{0}" not found'.format(config_file))
         sys.exit(19)
 
     config = configparser.ConfigParser()
+    config.optionxform = str
     config.read(config_file)
     return {key: value for key, value in config[conf_section].items()}
 
@@ -90,16 +91,6 @@ def setup(config):
         config['room'], config['homeserver']))
     return client, room
 
-def message_to_html(message):
-    """Converts a plain text message to html.
-
-    :param message: message to convert
-    :type message: str
-    :return: html formatted message
-    """
-    message = re.sub(r'\\n', '<br />', message)
-    return message
-
 def send_message(config, room):
     """Sends a message into the room. The config dictionary hold the message.
 
@@ -108,7 +99,7 @@ def send_message(config, room):
     :param room: reference to the Matrix room
     :type room: MatrixClient.room
     """
-    message = message_to_html(config['message'])
+    message = config['message']
     logging.debug('sending message:\n%s', message)
     room.send_html(message, msgtype=config['message_type'])
 
