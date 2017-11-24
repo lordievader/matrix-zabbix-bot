@@ -99,14 +99,19 @@ def get_triggers(config):
     :return: list of triggers
     """
     zapi = init(config)
-    triggers = zapi.trigger.get(only_true=1,
+    all_triggers = zapi.trigger.get(only_true=1,
                                 skipDependent=1,
                                 monitored=1,
                                 active=1,
                                 output='extend',
                                 expandDescripttion=1)
-    #pprint.pprint(triggers)
-    return [trigger_info(zapi, trigger) for trigger in triggers]
+    triggers = []
+    for trigger in all_triggers:
+        pprint.pprint(trigger)
+        if trigger['value'] == '1':
+            triggers.append(trigger_info(zapi, trigger))
+
+    return triggers
 
 def get_unacked_triggers(config):
     """Retrieves the unacked triggers from Zabbix.
@@ -116,14 +121,19 @@ def get_unacked_triggers(config):
     :return: list of triggers
     """
     zapi = init(config)
-    triggers = zapi.trigger.get(only_true=1,
+    all_triggers = zapi.trigger.get(only_true=1,
                                 skipDependent=1,
                                 monitored=1,
                                 active=1,
                                 output='extend',
                                 expandDescripttion=1,
                                 withLastEventUnacknowledged=1)
-    return [trigger_info(zapi, trigger) for trigger in triggers]
+    triggers = []
+    for trigger in all_triggers:
+        if trigger['value'] == '1':
+            triggers.append(trigger_info(zapi, trigger))
+
+    return triggers
 
 def get_acked_triggers(config):
     """Retrieves the acked triggers from Zabbix.
