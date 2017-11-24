@@ -27,6 +27,44 @@ def flags():
                         help='enables the debug output')
     return vars(parser.parse_args())
 
+def colorize(trigger):
+    """Colorizes the message based on their priority.
+
+    :param messages: the messages to format
+    :type messages: list
+    :return: formatted messages
+    """
+    logging.debug('colorize: %s', trigger)
+    header = '<font color="{color}">'
+    footer = '</font>'
+    color = '#000000'
+
+    level = trigger['priority']
+    # TODO: make colors configurable
+    if level == 'OK':
+        color = '#029c14'
+
+    elif level == 'Not classified':
+        color = '#ffffff'
+
+    elif level == 'Information':
+        color = '#032fdd'
+
+    elif level == 'Warning':
+        color = '#afaf00'
+
+    elif level == 'Average':
+        color = '#d35603'
+
+    elif level == 'High':
+        color = '#d30303'
+
+    elif level == 'Disaster':
+        color = '#ff0000'
+    
+    header = header.format(color=color)
+    return (header, footer)
+
 def zabbix_callback(room, event):
     """Callback function for the !zabbix matches.
 
@@ -72,13 +110,16 @@ def zabbix_callback(room, event):
 
         if len(triggers) > 0:
             for trigger in triggers:
-                messages.append(("{prio} {name} {desc}: {value} "
-                                 "({triggerid})").format(
+                header, footer = colorize(trigger)
+                messages.append(("{header}{prio} {name} {desc}: {value} "
+                                 "({triggerid}){footer}").format(
+                    header=header,
                     prio=trigger['priority'],
                     name=trigger['hostname'],
                     desc=trigger['description'],
                     value=trigger['prevvalue'],
-                    triggerid=trigger['trigger_id']))
+                    triggerid=trigger['trigger_id'],
+                    footer=footer))
 
         if len(messages) == 0:
             messages.append('No triggers received')
