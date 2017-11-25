@@ -34,7 +34,6 @@ def colorize(trigger):
     :type messages: list
     :return: formatted messages
     """
-    logging.debug('colorize: %s', trigger)
     header = '<font color="{color}">'
     footer = '</font>'
     color = '#000000'
