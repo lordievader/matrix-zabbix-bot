@@ -83,7 +83,7 @@ def trigger_info(zapi, trigger):
     hostid = item['hostid']
     prevvalue = item['prevvalue']
     hostname = zapi.host.get(hostids=hostid)[0]['name']
-    description = re.sub('({HOST.HOST}|{HOST.NAME})', hostname, trigger['description'])
+    description = trigger['description']
     logging.debug('%s: %s, previous value: %s (trigger id: %s)', hostname, description, prevvalue, trigger_id)
     return {'hostname': hostname,
             'description': description,
@@ -104,10 +104,9 @@ def get_triggers(config):
                                 monitored=1,
                                 active=1,
                                 output='extend',
-                                expandDescripttion=1)
+                                expandDescription=1)
     triggers = []
     for trigger in all_triggers:
-        pprint.pprint(trigger)
         if trigger['value'] == '1':
             triggers.append(trigger_info(zapi, trigger))
 
@@ -126,7 +125,7 @@ def get_unacked_triggers(config):
                                 monitored=1,
                                 active=1,
                                 output='extend',
-                                expandDescripttion=1,
+                                expandDescription=1,
                                 withLastEventUnacknowledged=1)
     triggers = []
     for trigger in all_triggers:
