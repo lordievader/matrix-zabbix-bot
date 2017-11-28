@@ -104,8 +104,18 @@ def zabbix_callback(room, event):
             elif arg == 'unacked':
                 triggers = zabbix.get_unacked_triggers(zabbix_config)
 
+            elif arg == 'ack':
+                messages.append(('please call this trigger in the '
+                                 'format of: !zabbix ack {trigger id}'))
+
+
             elif arg == 'help':
                 messages.append('hi')
+
+        elif len(args) == 2:
+            if args[0] == 'ack':
+                triggerid = args[1]
+                messages.append(zabbix.ack(zabbix_config, triggerid))
 
         if len(triggers) > 0:
             for trigger in triggers:

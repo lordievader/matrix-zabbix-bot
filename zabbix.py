@@ -4,7 +4,7 @@ import re
 import configparser
 import pprint
 import argparse
-from pyzabbix import ZabbixAPI
+from pyzabbix import ZabbixAPI, ZabbixAPIException
 
 import log
 
@@ -149,6 +149,26 @@ def get_acked_triggers(config):
             triggers.append(trigger)
 
     return triggers
+
+def ack(config, triggerid):
+    """Ack the given trigger id.
+
+    :param config: config for zapi
+    :type config: dict
+    :param triggerid: id of the trigger to ack
+    :type triggerid: str
+    """
+    zapi = init(config)
+    event = zapi.event.get(objectids=triggerid)
+    try:
+        zapi.event.acknowledge(eventids=event[0]['eventid'],
+                               message='Acknowledged by the Matrix-Zabbix bot')
+        return_string = "Trigger {0} acknowledged.".format(triggerid)
+
+    except ZabbixAPIException as error:
+        return_string = str(error)
+
+    return return_string
 
 if __name__ == '__main__':
     args = flags()
