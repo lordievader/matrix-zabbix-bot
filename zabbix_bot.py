@@ -77,7 +77,8 @@ def zabbix_callback(room, event):
         logging.debug('got a message from room: %s', room_id)
         if room_id in config:
             zabbix_realm = config[room_id]
-            zabbix_config = matrix.read_config(config['zabbix_config'],
+            args = flags()
+            zabbix_config = matrix.read_config(args['config'],
                                                zabbix_realm)
             logging.debug('using zabbix realm: %s\nconfig:\n%s',
                           zabbix_realm, zabbix_config)
@@ -173,6 +174,6 @@ if __name__ == "__main__":
     zabbix.logging = logging
     matrix.logging = logging
     config = matrix.read_config(args['config'], 'Zabbix-Bot')
-    matrix_config = matrix.read_config(config['matrix_config'])
+    matrix_config = matrix.read_config(args['config'])
     logging.debug('config:\n%s', config)
     main()
