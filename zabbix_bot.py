@@ -34,33 +34,20 @@ def colorize(trigger):
     :type messages: list
     :return: formatted messages
     """
+    args = flags()
+    config = matrix.read_config(args['config'], 'Zabbix-Bot')
     header = '<font color="{color}">'
     footer = '</font>'
     color = '#000000'
 
-    level = trigger['priority']
-    # TODO: make colors configurable
-    if level == 'OK':
-        color = '#029c14'
+    level = trigger['priority'].lower()
+    if level in config:
+        color = config[level]
+        logging.debug('found color: %s', color)
 
-    elif level == 'Not classified':
-        color = '#ffffff'
+    else:
+        color = '#000000'
 
-    elif level == 'Information':
-        color = '#032fdd'
-
-    elif level == 'Warning':
-        color = '#afaf00'
-
-    elif level == 'Average':
-        color = '#d35603'
-
-    elif level == 'High':
-        color = '#d30303'
-
-    elif level == 'Disaster':
-        color = '#ff0000'
-    
     header = header.format(color=color)
     return (header, footer)
 
