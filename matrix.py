@@ -5,15 +5,16 @@ Description:    Simple wrapper around matrix-python-sdk. Makes sending messages
 
 Matrix-Python-SDK: https://github.com/matrix-org/matrix-python-sdk
 """
-import os
-import sys
-import re
 import argparse
 import configparser
+import imp
+import logging
+import os
+import sys
 from matrix_client.api import MatrixHttpApi
 from matrix_client.client import MatrixClient
 
-import log
+#import log
 
 def flags():
     """Parses the arguments given.
@@ -39,10 +40,10 @@ def flags():
                         const=True, default=False,
                         help='enables the debug output')
 
-    args = parser.parse_args()
-    if args.config and (args.username or args.password):
-        print("-c and -u|-p are mutually exclusive")
-        sys.exit(2)
+    # args = parser.parse_args()
+    # if args.config and (args.username or args.password):
+    #     print("-c and -u|-p are mutually exclusive")
+    #     sys.exit(2)
 
     return vars(parser.parse_args())
 
@@ -57,8 +58,8 @@ def read_config(config_file, conf_section='Matrix'):
     """
     config_file = os.path.expanduser(config_file)
     if os.path.isfile(config_file) is False:
-        print('config file "{0}" not found'.format(config_file))
-        sys.exit(19)
+        raise FileNotFoundError('config file "{0}" not found'.format(
+            config_file))
 
     config = configparser.ConfigParser()
     config.optionxform = str
@@ -104,20 +105,34 @@ def send_message(config, room):
     logging.debug('sending message:\n%s', message)
     room.send_html(message, msgtype=config['message_type'])
 
+def set_log_level(level='INFO'):
+    """Sets the log level of the notebook. Per default this is 'INFO' but
+    can be changed.
+
+    :param level: level to be passed to logging (defaults to 'INFO')
+    :type level: str
+    """
+    imp.reload(logging)
+    logging.basicConfig(format='%(asctime)s: %(levelname)8s - %(message)s',
+                        level=level)
+
 if __name__ == '__main__':
     args = flags()
     args['message'] = " ".join(args['message'])
     if args['debug'] is True:
-        log.set_log_level('DEBUG')
+        set_log_level('DEBUG')
 
     else:
-        log.set_log_level()
+        set_log_level()
 
-    logging = log.logging
-    config = merge_config(args, read_config(args['config']))
+    try:
+        config = merge_config(args, read_config(args['config']))
+
+    except FileNotFoundError:
+        config = args
+        if None in [config['username'], config['password'], config['room']]:
+            raise
+
     logging.debug('config: %s', config)
     client, room = setup(config)
     send_message(config, room)
-    #message = break_line(message)
-    #message = zabbix(message)
-    #send_html(room, message)

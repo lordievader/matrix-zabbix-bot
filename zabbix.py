@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-import os
-import re
-import configparser
-import pprint
 import argparse
+import configparser
+import imp
+import logging
+import os
+import pprint
+import re
 from pyzabbix import ZabbixAPI, ZabbixAPIException
-
-import log
+from matrix import set_log_level
 
 PRIORITY = {
         0: 'Not classified',
@@ -170,15 +171,32 @@ def ack(config, triggerid):
 
     return return_string
 
+def hosts(config):
+    """Retrieves the monitored hosts.
+
+    :param config: config for zapi
+    :type config: dict
+    """
+    zapi = init(config)
+    info = zapi.host.get(monitored=True)
+    hosts = []
+    pprint.pprint(hosts)
+    for host in info:
+        hosts.append({'hostname': host['name'],
+                         'description': host['description'],
+                         'status': host['status'],
+                         'hostid': host['hostid']})
+
+    return hosts
+
 if __name__ == '__main__':
     args = flags()
     if args['debug'] is True:
-        log.set_log_level('DEBUG')
+        set_log_level('DEBUG')
 
     else:
-        log.set_log_level()
+        set_log_level()
 
-    logging = log.logging
     logging.debug(args)
 
     if len(args['config']) == 1:

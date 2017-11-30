@@ -3,14 +3,16 @@
 Description:    Zabbix bot responsible for !zabbix calls.
 """
 import argparse
+import imp
+import logging
 import sys
 from matrix_bot_api.matrix_bot_api import MatrixBotAPI
 from matrix_bot_api.mregex_handler import MRegexHandler
 from matrix_bot_api.mcommand_handler import MCommandHandler
 
-import log
 import zabbix
 import matrix
+from matrix import set_log_level
 
 def flags():
     """Parses the arguments given.
@@ -78,6 +80,7 @@ def zabbix_callback(room, event):
         args.pop(0)
         messages = []
         triggers = []
+        hosts = []
         if len(args) == 0:
             triggers = zabbix.get_unacked_triggers(zabbix_config)
 
@@ -96,6 +99,8 @@ def zabbix_callback(room, event):
                 messages.append(('please call this trigger in the '
                                  'format of: !zabbix ack {trigger id}'))
 
+            elif arg == 'hosts':
+                hosts = zabbix.hosts(zabbix_config)
 
             elif arg == 'help':
                 messages.append('hi')
@@ -117,6 +122,16 @@ def zabbix_callback(room, event):
                     value=trigger['prevvalue'],
                     triggerid=trigger['trigger_id'],
                     footer=footer))
+
+        if len(hosts) > 0:
+            for host in hosts:
+                messages.append(("{hostname} {description} status: "
+                                 "{status} ({hostid})").format(
+                    hostname=host['hostname'],
+                    description=host['description'],
+                    status=host['status'],
+                    hostid=host['hostid']))
+
 
         if len(messages) == 0:
             messages.append('No triggers received')
@@ -152,12 +167,11 @@ def main():
 if __name__ == "__main__":
     args = flags()
     if args['debug'] is True:
-        log.set_log_level('DEBUG')
+        set_log_level('DEBUG')
 
     else:
-        log.set_log_level()
+        set_log_level()
 
-    logging = log.logging
     zabbix.logging = logging
     matrix.logging = logging
     config = matrix.read_config(args['config'], 'Zabbix-Bot')
