@@ -14,8 +14,6 @@ import sys
 from matrix_client.api import MatrixHttpApi
 from matrix_client.client import MatrixClient
 
-#import log
-
 def flags():
     """Parses the arguments given.
 
