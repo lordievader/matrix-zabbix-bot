@@ -10,7 +10,7 @@ import configparser
 import imp
 import logging
 import os
-import sys
+import re
 from matrix_client.api import MatrixHttpApi
 from matrix_client.client import MatrixClient
 
@@ -91,6 +91,25 @@ def setup(config):
         config['room'], config['homeserver']))
     return client, room
 
+def colorize(message):
+    """Colorizes a message based on the configuration. It tries to match the
+    config key with the message. If there is a match, that color is selected.
+
+    :param message: the message to color
+    :type message: str
+    :return: colorized message
+    """
+    for severity, color in color_config.items():
+        match = re.match(r'^{0} '.format(severity), message, re.I)
+        if match:
+            break
+
+    else:
+        color = '#000000'
+
+    logging.debug(color)
+    return "<font color=\"{0}\">{1}</font>".format(color, message)
+
 def send_message(config, room):
     """Sends a message into the room. The config dictionary hold the message.
 
@@ -100,6 +119,9 @@ def send_message(config, room):
     :type room: MatrixClient.room
     """
     message = config['message']
+    if config['colors'] == 'true':
+        message = colorize(message)
+
     logging.debug('sending message:\n%s', message)
     room.send_html(message, msgtype=config['message_type'])
 
@@ -132,5 +154,8 @@ if __name__ == '__main__':
             raise
 
     logging.debug('config: %s', config)
+    if config['colors'] == 'true':
+        color_config = read_config(args['config'], 'Colors')
+
     client, room = setup(config)
     send_message(config, room)
