@@ -162,9 +162,10 @@ def ack(config, triggerid):
     zapi = init(config)
     event = zapi.event.get(objectids=triggerid)
     try:
-        zapi.event.acknowledge(eventids=event[0]['eventid'],
-                               message='Acknowledged by the Matrix-Zabbix bot')
-        return_string = "Trigger {0} acknowledged.".format(triggerid)
+        msg = zapi.event.acknowledge(eventids=event[-1]['eventid'],
+                                     message='Acknowledged by the Matrix-Zabbix bot')
+        return_string = "Trigger {0} acknowledged. {1}".format(
+            triggerid, msg)
 
     except ZabbixAPIException as error:
         return_string = str(error)
