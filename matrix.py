@@ -119,7 +119,7 @@ def send_message(config, room):
     :type room: MatrixClient.room
     """
     message = config['message']
-    if config['colors'] == 'true':
+    if config['colors'] == 'true' and 'color_config' in dir():
         message = colorize(message)
 
     logging.debug('sending message:\n%s', message)
@@ -154,8 +154,6 @@ if __name__ == '__main__':
             raise
 
     logging.debug('config: %s', config)
-    if config['colors'] == 'true':
-        color_config = read_config(args['config'], 'Colors')
 
     client, room = setup(config)
     send_message(config, room)
