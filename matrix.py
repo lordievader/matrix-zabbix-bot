@@ -10,9 +10,8 @@ import configparser
 import imp
 import logging
 import os
-import re
-from matrix_client.api import MatrixHttpApi
 from matrix_client.client import MatrixClient
+
 
 def flags():
     """Parses the arguments given.
@@ -23,7 +22,7 @@ def flags():
     parser.add_argument('room', type=str, nargs='?',
                         help='room to deliver message to')
     parser.add_argument('message', type=str, nargs='+',
-                                help='the message to Matrix')
+                        help='the message to Matrix')
     parser.add_argument('-u', '--user', type=str, dest='username',
                         help='username to use (overrides the config)')
     parser.add_argument('-p', '--password', type=str, dest='password',
@@ -31,19 +30,14 @@ def flags():
     parser.add_argument('-c', '--config', type=str, dest='config',
                         default='/etc/matrix.conf',
                         help=('specifies the config file '
-                              '(defaults to /etc/matrix.conf)')) 
+                              '(defaults to /etc/matrix.conf)'))
     parser.add_argument('-t', '--type', type=str, dest='message_type',
                         help=('sets the message type'))
     parser.add_argument('-d', '--debug', action='store_const', dest='debug',
                         const=True, default=False,
                         help='enables the debug output')
-
-    # args = parser.parse_args()
-    # if args.config and (args.username or args.password):
-    #     print("-c and -u|-p are mutually exclusive")
-    #     sys.exit(2)
-
     return vars(parser.parse_args())
+
 
 def read_config(config_file, conf_section='Matrix'):
     """Reads a matrix config file.
@@ -64,6 +58,7 @@ def read_config(config_file, conf_section='Matrix'):
     config.read(config_file)
     return {key: value for key, value in config[conf_section].items()}
 
+
 def merge_config(args, config):
     """This function merges the args and the config together.
     The command line arguments are prioritized over the configured values.
@@ -80,6 +75,7 @@ def merge_config(args, config):
 
     return config
 
+
 def setup(config):
     """Sets up the Matrix client. Makes sure the (specified) room is joined.
     """
@@ -91,24 +87,6 @@ def setup(config):
         config['room'], config['homeserver']))
     return client, room
 
-def colorize(message):
-    """Colorizes a message based on the configuration. It tries to match the
-    config key with the message. If there is a match, that color is selected.
-
-    :param message: the message to color
-    :type message: str
-    :return: colorized message
-    """
-    for severity, color in color_config.items():
-        match = re.match(r'^{0} '.format(severity), message, re.I)
-        if match:
-            break
-
-    else:
-        color = '#000000'
-
-    logging.debug(color)
-    return "<font color=\"{0}\">{1}</font>".format(color, message)
 
 def send_message(config, room):
     """Sends a message into the room. The config dictionary hold the message.
@@ -119,11 +97,9 @@ def send_message(config, room):
     :type room: MatrixClient.room
     """
     message = config['message']
-    if config['colors'] == 'true' and 'color_config' in dir():
-        message = colorize(message)
-
     logging.debug('sending message:\n%s', message)
     room.send_html(message, msgtype=config['message_type'])
+
 
 def set_log_level(level='INFO'):
     """Sets the log level of the notebook. Per default this is 'INFO' but
@@ -135,6 +111,7 @@ def set_log_level(level='INFO'):
     imp.reload(logging)
     logging.basicConfig(format='%(asctime)s: %(levelname)8s - %(message)s',
                         level=level)
+
 
 if __name__ == '__main__':
     args = flags()
