@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Author:      Olivier van der Toorn <oliviervdtoorn@gmail.com>
 Description:    Zabbix alert script for matrix.
-This script expects the `zabbix_bot' import is available.
+This script expects the `matrix_zabbix_bot' import is available.
 """
 import re
 import logging
-from zabbix_bot import matrix
+from matrix_zabbix_bot import matrix
 
 
 def colorize(color_config, message):
