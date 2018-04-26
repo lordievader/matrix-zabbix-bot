@@ -28,7 +28,7 @@ def flags():
     parser.add_argument('-p', '--password', type=str, dest='password',
                         help='password to use (overrides the config)')
     parser.add_argument('-c', '--config', type=str, dest='config',
-                        default='/etc/matrix.conf',
+                        default='/etc/zabbix-bot.conf',
                         help=('specifies the config file '
                               '(defaults to /etc/matrix.conf)'))
     parser.add_argument('-t', '--type', type=str, dest='message_type',

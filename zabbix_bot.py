@@ -10,6 +10,7 @@ from matrix_bot_api.mregex_handler import MRegexHandler
 
 import zabbix
 import matrix
+import matrix_alert
 from matrix import set_log_level
 
 
@@ -39,7 +40,7 @@ def _zabbix_config(room_id):
     :return: zabbix config directionary
     """
     zabbix_realm = config[room_id]
-    zabbix_config = matrix.read_config(config['zabbix_config'],
+    zabbix_config = matrix.read_config(config['config'],
                                        zabbix_realm)
     logging.debug('using zabbix realm: %s\nconfig:\n%s',
                   zabbix_realm, zabbix_config)
@@ -146,17 +147,17 @@ def zabbix_callback(room, event):
                 messages.append(zabbix.ack(zabbix_config, triggerid))
 
         if len(triggers) > 0:
+            color_config = matrix.read_config(config['config'], 'Colors')
             for trigger in triggers:
-                header, footer = colorize(trigger)
-                messages.append(("{header}{prio} {name} {desc}: {value} "
-                                 "({triggerid}){footer}").format(
-                    header=header,
+                message = ("{prio} {name} {desc}: {value} "
+                           "({triggerid})").format(
                     prio=trigger['priority'],
                     name=trigger['hostname'],
                     desc=trigger['description'],
                     value=trigger['prevvalue'],
-                    triggerid=trigger['trigger_id'],
-                    footer=footer))
+                    triggerid=trigger['trigger_id'])
+                formatted_message = matrix_alert.colorize(color_config, message)
+                messages.append(formatted_message)
 
         if len(hosts) > 0:
             for host in hosts:
@@ -377,6 +378,6 @@ if __name__ == "__main__":
     matrix.logging = logging
     config = matrix.read_config(args['config'], 'Zabbix-Bot')
     config['config'] = args['config']
-    matrix_config = matrix.read_config(config['matrix_config'])
+    matrix_config = matrix.read_config(args['config'], 'Matrix')
     logging.debug('config:\n%s', config)
     main()
