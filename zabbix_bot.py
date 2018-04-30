@@ -82,6 +82,33 @@ def flags():
     return vars(parser.parse_args())
 
 
+def _zabbix_help():
+    """Returns the help text for the !zabbix command.
+    """
+    help_text = (
+        "Usage: !zabbix {arguments}"
+        "<br /><br />"
+        "This command returns info about Zabbix (triggers mostly)."
+        "<br />"
+        "Currently supported arguments:"
+        "<br /><br />"
+        "help: shows this message"
+        "<br />"
+        "all: retrieves all triggers"
+        "<br />"
+        "acked: retrieves acked triggers"
+        "<br />"
+        "unacked: retrieves unacked triggers"
+        "<br />"
+        "ack $trigger_id: acknowledges the trigger with the given id "
+        "(the number between brackets)"
+        "<br /><br />"
+        "Without any arguments this command gives unacknowledged "
+        "triggers from the configured Zabbix server."
+    )
+    return help_text
+
+
 def _zabbix_unacked_triggers(zabbix_config):
     """Retrieves the unacked triggers from zabbix.
 
@@ -107,6 +134,71 @@ def _zabbix_unacked_triggers(zabbix_config):
     return "<br />".join(messages)
 
 
+def _zabbix_acked_triggers(zabbix_config):
+    """Retrieves the acked triggers from zabbix.
+
+    :param zabbix_config: zabbix configuration
+    :type zabbix_config: dict
+    :return: messages to return to matrix
+    """
+    messages = []
+    triggers = zabbix.get_acked_triggers(zabbix_config)
+    color_config = matrix.read_config(config['config'], 'Colors')
+    for trigger in triggers:
+        message = ("{prio} {name} {desc}: {value} "
+                   "({triggerid})").format(
+            prio=trigger['priority'],
+            name=trigger['hostname'],
+            desc=trigger['description'],
+            value=trigger['prevvalue'],
+            triggerid=trigger['trigger_id'])
+        formatted_message = matrix_alert.colorize(
+            color_config, message)
+        messages.append(formatted_message)
+
+    return "<br />".join(messages)
+
+
+def _zabbix_all_triggers(zabbix_config):
+    """Retrieves the all triggers from zabbix regardless of their
+    status.
+
+    :param zabbix_config: zabbix configuration
+    :type zabbix_config: dict
+    :return: messages to return to matrix
+    """
+    messages = []
+    triggers = zabbix.get_triggers(zabbix_config)
+    color_config = matrix.read_config(config['config'], 'Colors')
+    for trigger in triggers:
+        message = ("{prio} {name} {desc}: {value} "
+                   "({triggerid})").format(
+            prio=trigger['priority'],
+            name=trigger['hostname'],
+            desc=trigger['description'],
+            value=trigger['prevvalue'],
+            triggerid=trigger['trigger_id'])
+        formatted_message = matrix_alert.colorize(
+            color_config, message)
+        messages.append(formatted_message)
+
+    return "<br />".join(messages)
+
+
+def _zabbix_acknowledge_trigger(zabbix_config, trigger_id):
+    """Acknowledges a trigger with the given id.
+
+    :param zabbix_config: zabbix configuration
+    :type zabbix_config: dict
+    :param trigger_id: id to acknowledge
+    :type trigger_id: int
+    :return: messages to return to matrix
+    """
+    messages = []
+    messages.append(zabbix.ack(zabbix_config, trigger_id))
+    return "<br />".join(messages)
+
+
 def zabbix_callback(room, event):
     """Callback function for the !zabbix matches.
 
@@ -123,65 +215,39 @@ def zabbix_callback(room, event):
         args = event['content']['body'].split()
         args.pop(0)
         messages = []
-        triggers = []
-        hosts = []
         if len(args) == 0:
-            # triggers = zabbix.get_unacked_triggers(zabbix_config)
             messages = _zabbix_unacked_triggers(zabbix_config)
 
-        # elif len(args) == 1:
-        #     arg = args[0]
-        #     if arg == 'all':
-        #         triggers = zabbix.get_triggers(zabbix_config)
+        elif len(args) == 1:
+            arg = args[0]
+            if arg == 'all':
+                messages = _zabbix_all_triggers(zabbix_config)
 
-        #     elif arg == 'acked':
-        #         triggers = zabbix.get_acked_triggers(zabbix_config)
+            elif arg == 'acked':
+                messages = _zabbix_acked_triggers(zabbix_config)
 
-        #     elif arg == 'unacked':
-        #         triggers = zabbix.get_unacked_triggers(zabbix_config)
-
-        #     elif arg == 'ack':
-        #         messages.append(('please call this trigger in the '
-        #                          'format of: !zabbix ack {trigger id}'))
+            elif arg == 'unacked':
+                messages = _zabbix_unacked_triggers(zabbix_config)
 
         #     elif arg == 'hosts':
         #         hosts = zabbix.hosts(zabbix_config)
 
-        #     elif arg == 'help':
-        #         messages.append('hi')
+            else:
+                messages = _zabbix_help()
 
-        # elif len(args) == 2:
-        #     if args[0] == 'ack':
-        #         triggerid = args[1]
-        #         messages.append(zabbix.ack(zabbix_config, triggerid))
+        elif len(args) == 2:
+            if args[0] == 'ack':
+                trigger_id = args[1]
+                messages = _zabbix_acknowledge_trigger(
+                    zabbix_config, trigger_id)
 
-        # if len(triggers) > 0:
-        #     color_config = matrix.read_config(config['config'], 'Colors')
-        #     for trigger in triggers:
-        #         message = ("{prio} {name} {desc}: {value} "
-        #                    "({triggerid})").format(
-        #             prio=trigger['priority'],
-        #             name=trigger['hostname'],
-        #             desc=trigger['description'],
-        #             value=trigger['prevvalue'],
-        #             triggerid=trigger['trigger_id'])
-        #         formatted_message = matrix_alert.colorize(
-        #             color_config, message)
-        #         messages.append(formatted_message)
+            else:
+                messages = _zabbix_help()
 
-        # if len(hosts) > 1:
-        #     for host in hosts:
-        #         messages.append(("{hostname} {description} status: "
-        #                          "{status} ({hostid})").format(
-        #             hostname=host['hostname'],
-        #             description=host['description'],
-        #             status=host['status'],
-        #             hostid=host['hostid']))
+        else:
+            messages = _zabbix_help()
 
-        # if len(messages) == 0:
-        #     messages.append('No triggers received')
 
-        # messages = "<br />".join(sorted(messages))
         matrix_config['message'] = messages
         matrix.send_message(matrix_config, room)
 
