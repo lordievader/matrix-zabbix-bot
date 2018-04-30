@@ -47,6 +47,24 @@ def _zabbix_config(room_id):
     return zabbix_config
 
 
+def _error(matrix_config, room, error):
+    """Error handling function. Prints a traceback to the log and the
+    title of the error is returned to matrix.
+
+    :param matrix_config: the matrix configuration
+    :type matrix_config: dict
+    :param room: matrix room reference
+    :type room: matrix room object
+    :param error: reference to the exception
+    :type error: exception
+    """
+    logging.error(error, exc_info=True)
+    message = "{0}<br /><br />Please see my log.".format(
+        str(error))
+    matrix_config['message'] = message
+    matrix.send_message(matrix_config, room)
+
+
 def flags():
     """Parses the arguments given.
 
@@ -64,29 +82,29 @@ def flags():
     return vars(parser.parse_args())
 
 
-def colorize(trigger):
-    """Colorizes the message based on their priority.
+def _zabbix_unacked_triggers(zabbix_config):
+    """Retrieves the unacked triggers from zabbix.
 
-    :param messages: the messages to format
-    :type messages: list
-    :return: formatted messages
+    :param zabbix_config: zabbix configuration
+    :type zabbix_config: dict
+    :return: messages to return to matrix
     """
-    args = flags()
-    config = matrix.read_config(args['config'], 'Zabbix-Bot')
-    header = '<font color="{color}">'
-    footer = '</font>'
-    color = '#000000'
+    messages = []
+    triggers = zabbix.get_unacked_triggers(zabbix_config)
+    color_config = matrix.read_config(config['config'], 'Colors')
+    for trigger in triggers:
+        message = ("{prio} {name} {desc}: {value} "
+                   "({triggerid})").format(
+            prio=trigger['priority'],
+            name=trigger['hostname'],
+            desc=trigger['description'],
+            value=trigger['prevvalue'],
+            triggerid=trigger['trigger_id'])
+        formatted_message = matrix_alert.colorize(
+            color_config, message)
+        messages.append(formatted_message)
 
-    level = trigger['priority'].lower()
-    if level in config:
-        color = config[level]
-        logging.debug('found color: %s', color)
-
-    else:
-        color = '#000000'
-
-    header = header.format(color=color)
-    return (header, footer)
+    return "<br />".join(messages)
 
 
 def zabbix_callback(room, event):
@@ -98,18 +116,8 @@ def zabbix_callback(room, event):
     :type event: event
     """
     try:
-        room_id = room.room_id.split(':')[0]
-        logging.debug('got a message from room: %s', room_id)
-        if room_id in config:
-            zabbix_realm = config[room_id]
-            args = flags()
-            zabbix_config = matrix.read_config(args['config'],
-                                               zabbix_realm)
-            logging.debug('using zabbix realm: %s\nconfig:\n%s',
-                          zabbix_realm, zabbix_config)
-
-        else:
-            logging.warning('room_id is unknown')
+        room_id, zabbix_config = _room_init(room)
+        if room_id is None:
             return
 
         args = event['content']['body'].split()
@@ -118,65 +126,67 @@ def zabbix_callback(room, event):
         triggers = []
         hosts = []
         if len(args) == 0:
-            triggers = zabbix.get_unacked_triggers(zabbix_config)
+            # triggers = zabbix.get_unacked_triggers(zabbix_config)
+            messages = _zabbix_unacked_triggers(zabbix_config)
 
-        elif len(args) == 1:
-            arg = args[0]
-            if arg == 'all':
-                triggers = zabbix.get_triggers(zabbix_config)
+        # elif len(args) == 1:
+        #     arg = args[0]
+        #     if arg == 'all':
+        #         triggers = zabbix.get_triggers(zabbix_config)
 
-            elif arg == 'acked':
-                triggers = zabbix.get_acked_triggers(zabbix_config)
+        #     elif arg == 'acked':
+        #         triggers = zabbix.get_acked_triggers(zabbix_config)
 
-            elif arg == 'unacked':
-                triggers = zabbix.get_unacked_triggers(zabbix_config)
+        #     elif arg == 'unacked':
+        #         triggers = zabbix.get_unacked_triggers(zabbix_config)
 
-            elif arg == 'ack':
-                messages.append(('please call this trigger in the '
-                                 'format of: !zabbix ack {trigger id}'))
+        #     elif arg == 'ack':
+        #         messages.append(('please call this trigger in the '
+        #                          'format of: !zabbix ack {trigger id}'))
 
-            elif arg == 'hosts':
-                hosts = zabbix.hosts(zabbix_config)
+        #     elif arg == 'hosts':
+        #         hosts = zabbix.hosts(zabbix_config)
 
-            elif arg == 'help':
-                messages.append('hi')
+        #     elif arg == 'help':
+        #         messages.append('hi')
 
-        elif len(args) == 2:
-            if args[0] == 'ack':
-                triggerid = args[1]
-                messages.append(zabbix.ack(zabbix_config, triggerid))
+        # elif len(args) == 2:
+        #     if args[0] == 'ack':
+        #         triggerid = args[1]
+        #         messages.append(zabbix.ack(zabbix_config, triggerid))
 
-        if len(triggers) > 0:
-            color_config = matrix.read_config(config['config'], 'Colors')
-            for trigger in triggers:
-                message = ("{prio} {name} {desc}: {value} "
-                           "({triggerid})").format(
-                    prio=trigger['priority'],
-                    name=trigger['hostname'],
-                    desc=trigger['description'],
-                    value=trigger['prevvalue'],
-                    triggerid=trigger['trigger_id'])
-                formatted_message = matrix_alert.colorize(color_config, message)
-                messages.append(formatted_message)
+        # if len(triggers) > 0:
+        #     color_config = matrix.read_config(config['config'], 'Colors')
+        #     for trigger in triggers:
+        #         message = ("{prio} {name} {desc}: {value} "
+        #                    "({triggerid})").format(
+        #             prio=trigger['priority'],
+        #             name=trigger['hostname'],
+        #             desc=trigger['description'],
+        #             value=trigger['prevvalue'],
+        #             triggerid=trigger['trigger_id'])
+        #         formatted_message = matrix_alert.colorize(
+        #             color_config, message)
+        #         messages.append(formatted_message)
 
-        if len(hosts) > 0:
-            for host in hosts:
-                messages.append(("{hostname} {description} status: "
-                                 "{status} ({hostid})").format(
-                    hostname=host['hostname'],
-                    description=host['description'],
-                    status=host['status'],
-                    hostid=host['hostid']))
+        # if len(hosts) > 1:
+        #     for host in hosts:
+        #         messages.append(("{hostname} {description} status: "
+        #                          "{status} ({hostid})").format(
+        #             hostname=host['hostname'],
+        #             description=host['description'],
+        #             status=host['status'],
+        #             hostid=host['hostid']))
 
-        if len(messages) == 0:
-            messages.append('No triggers received')
+        # if len(messages) == 0:
+        #     messages.append('No triggers received')
 
-        messages = "<br />".join(sorted(messages))
+        # messages = "<br />".join(sorted(messages))
         matrix_config['message'] = messages
         matrix.send_message(matrix_config, room)
 
     except Exception as error:  # Keep running!
-        logging.error(error, exc_info=True)
+        return _error(matrix_config, room, error)
 
 
 def _dnsjedi_help():
@@ -331,12 +341,7 @@ def dnsjedi_callback(room, event):
         matrix.send_message(matrix_config, room)
 
     except Exception as error:  # Keep running!
-        logging.error(error, exc_info=True)
-        message = "{0}<br /><br />Please see my log.".format(
-            str(error))
-        matrix_config['message'] = message
-        matrix.send_message(matrix_config, room)
-        return
+        return _error(matrix_config, room, error)
 
 
 def main():

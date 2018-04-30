@@ -28,7 +28,6 @@ def colorize(color_config, message):
 
     formatted_message = '<font color=\"{0}\">{1} {2}</font>'.format(
         color, emoji, message)
-    logging.debug("%s: %s", level, formatted_message)
     return formatted_message
 
 
