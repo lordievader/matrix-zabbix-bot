@@ -18,8 +18,8 @@ def colorize(color_config, message):
     :return: colorized message
     """
     for level, color in color_config.items():
-        regex = re.compile('^{0}[:\s].*'.format(level), re.IGNORECASE)
-        if regex.match(message):
+        regex = re.compile('{0}'.format(level), re.IGNORECASE)
+        if regex.search(message):
             color, emoji = color.split(',')
             break
 
@@ -48,7 +48,11 @@ if __name__ == '__main__':
         if None in [config['username'], config['password'], config['room']]:
             raise
 
-    color_config = matrix.read_config(args['config'], 'Colors')
+    color_config = {}
+    for key, value in matrix.read_config(args['config'], 'Colors').items():
+        if key.startswith('zabbix'):
+            key = key.replace('zabbix_', '')
+            color_config[key] = value
 
     logging.debug(color_config)
     config['message'] = colorize(color_config, config['message'])

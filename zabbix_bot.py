@@ -118,7 +118,12 @@ def _zabbix_unacked_triggers(zabbix_config):
     """
     messages = []
     triggers = zabbix.get_unacked_triggers(zabbix_config)
-    color_config = matrix.read_config(config['config'], 'Colors')
+    color_config = {}
+    for key, value in matrix.read_config(config['config'], 'Colors').items():
+        if key.startswith('zabbix'):
+            key = key.replace('zabbix_', '')
+            color_config[key] = value
+
     for trigger in triggers:
         message = ("{prio} {name} {desc}: {value} "
                    "({triggerid})").format(
@@ -143,7 +148,12 @@ def _zabbix_acked_triggers(zabbix_config):
     """
     messages = []
     triggers = zabbix.get_acked_triggers(zabbix_config)
-    color_config = matrix.read_config(config['config'], 'Colors')
+    color_config = {}
+    for key, value in matrix.read_config(config['config'], 'Colors').items():
+        if key.startswith('zabbix'):
+            key = key.replace('zabbix_', '')
+            color_config[key] = value
+
     for trigger in triggers:
         message = ("{prio} {name} {desc}: {value} "
                    "({triggerid})").format(
@@ -169,7 +179,12 @@ def _zabbix_all_triggers(zabbix_config):
     """
     messages = []
     triggers = zabbix.get_triggers(zabbix_config)
-    color_config = matrix.read_config(config['config'], 'Colors')
+    color_config = {}
+    for key, value in matrix.read_config(config['config'], 'Colors').items():
+        if key.startswith('zabbix'):
+            key = key.replace('zabbix_', '')
+            color_config[key] = value
+
     for trigger in triggers:
         message = ("{prio} {name} {desc}: {value} "
                    "({triggerid})").format(
@@ -290,8 +305,12 @@ def _dnsjedi_forecast_format(value):
     else:
         time_delta = datetime.timedelta(seconds=seconds)
         done = datetime.datetime.utcnow() + time_delta
-        time_left = "done in about {0} ({1} UTC)".format(
-            str(time_delta), done)
+        warning = ""
+        if done.hour > 20:
+            warning = "WARNING "
+
+        time_left = "{0}done in about {1} ({2} UTC)".format(
+            warning, str(time_delta), done)
 
     return time_left
 
@@ -303,6 +322,14 @@ def _dnsjedi_chunks_summary(zabbix_config):
     :type zabbix_config: dict
     :return: message to send back
     """
+    color_config = {}
+    for key, value in matrix.read_config(args['config'], 'Colors').items():
+        if key.startswith('dnsjedi'):
+            key = key.replace('dnsjedi_', '')
+            color_config[key] = value
+
+    logging.debug(color_config)
+
     lines = []
     clustermanagers = zabbix.get_itemvalues_for_group(
         zabbix_config, 'Clustermanagers',
@@ -315,13 +342,15 @@ def _dnsjedi_chunks_summary(zabbix_config):
             chunks_left = value[0]
             time_left = _dnsjedi_forecast_format(value[1])
             if chunks_left != '0':
-                lines.append(
-                    "{0}: {1} chunks left, {2}".format(
-                        name, chunks_left, time_left))
+                line = "{0}: {1} chunks left, {2}".format(
+                    name, chunks_left, time_left)
 
             else:
-                lines.append(
-                    "{0}: done".format(name))
+                line = "{0}: done".format(name)
+
+            formatted_line = matrix_alert.colorize(color_config, line)
+            lines.append(formatted_line)
+
     return "<br />".join(lines)
 
 
