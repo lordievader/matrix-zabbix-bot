@@ -5,6 +5,7 @@ This script expects the `matrix_zabbix_bot' import is available.
 """
 import re
 import logging
+import locale
 from matrix_zabbix_bot import matrix
 
 
@@ -32,6 +33,7 @@ def colorize(color_config, message):
 
 
 if __name__ == '__main__':
+    locale.setlocale(locale.LC_CTYPE, 'en_US.UTF-8')
     args = matrix.flags()
     args['message'] = " ".join(args['message'])
     if args['debug'] is True:
