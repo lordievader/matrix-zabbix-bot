@@ -262,6 +262,8 @@ def zabbix_callback(room, event):
         else:
             messages = _zabbix_help()
 
+        if len(messages) == 0:
+            messages = 'Nothing to notify'
 
         matrix_config['message'] = messages
         matrix.send_message(matrix_config, room)
