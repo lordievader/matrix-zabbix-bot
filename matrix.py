@@ -73,6 +73,9 @@ def merge_config(args, config):
         if value is not None:
             config[key] = value
 
+    if 'domain' not in config:
+        config['domain'] = config['homeserver']
+
     return config
 
 
@@ -84,7 +87,7 @@ def setup(config):
     client.login_with_password(
         username=config['username'], password=config['password'])
     room = client.join_room('{0}:{1}'.format(
-        config['room'], config['homeserver']))
+        config['room'], config['domain']))
     return client, room
 
 
