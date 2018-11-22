@@ -2,9 +2,10 @@
 """Author:      Olivier van der Toorn <oliviervdtoorn@gmail.com>
 Description:    Zabbix bot responsible for !zabbix calls.
 """
-import logging
-import datetime
 import argparse
+import datetime
+import logging
+import time
 from matrix_bot_api.matrix_bot_api import MatrixBotAPI
 from matrix_bot_api.mregex_handler import MRegexHandler
 
@@ -460,12 +461,12 @@ def main():
     bot.add_handler(dnsjedi_handler)
 
     # Start polling
-    bot.start_polling()
-
-    # Infinitely read stdin to stall main thread while the bot runs in other
-    # threads
     while True:
-        input()
+        thread = bot.start_polling()
+        thread.join()
+        logging.warning(
+            'thread died, waiting five seconds before connecting again...')
+        time.sleep(5)
 
 
 if __name__ == "__main__":
