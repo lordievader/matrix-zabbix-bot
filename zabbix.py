@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
+"""Author:      Olivier van der Toorn <oliviervdtoorn@gmail.com>
+Description:    Wrapper around pyzabbix for use in the matrix-zabbix-bot.
+"""
 import argparse
 import configparser
-import imp
 import logging
 import os
 import pprint
@@ -10,12 +12,12 @@ from pyzabbix import ZabbixAPI, ZabbixAPIException
 from matrix import set_log_level
 
 PRIORITY = {
-        0: 'Not classified',
-        1: 'Information',
-        2: 'Warning',
-        3: 'Average',
-        4: 'High',
-        5: 'Disaster',
+    0: 'Not classified',
+    1: 'Information',
+    2: 'Warning',
+    3: 'Average',
+    4: 'High',
+    5: 'Disaster',
 }
 
 
@@ -160,6 +162,7 @@ def get_acked_triggers(config):
 
     return triggers
 
+
 def ack(config, triggerid):
     """Ack the given trigger id.
 
@@ -171,8 +174,10 @@ def ack(config, triggerid):
     zapi = init(config)
     event = zapi.event.get(objectids=triggerid)
     try:
-        msg = zapi.event.acknowledge(eventids=event[-1]['eventid'],
-                                     message='Acknowledged by the Matrix-Zabbix bot')
+        msg = zapi.event.acknowledge(
+            eventids=event[-1]['eventid'],
+            action=2,
+            message='Acknowledged by the Matrix-Zabbix bot')
         return_string = "Trigger {0} acknowledged. {1}".format(
             triggerid, msg)
 
