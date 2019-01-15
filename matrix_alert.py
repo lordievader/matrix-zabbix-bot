@@ -60,4 +60,5 @@ if __name__ == '__main__':
     config['message'] = colorize(color_config, config['message'])
     client, room = matrix.setup(config)
     matrix.send_message(config, room)
-    client.logout()
+    if 'token' not in config:
+        client.logout()

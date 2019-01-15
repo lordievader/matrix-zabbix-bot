@@ -147,4 +147,5 @@ if __name__ == '__main__':
 
     client, room = setup(config)
     send_message(config, room)
-    client.logout()
+    if 'token' not in config:
+        client.logout()
