@@ -84,14 +84,18 @@ def setup(config):
     """
     loginargs = {}
     if 'token' in config:
-        loginargs['user_id'] = config['username']
+        loginargs['user_id'] = '@{0}:{1}'.format(
+            config['username'],
+            config['domain'])
         loginargs['token'] = config['token']
+
     client = MatrixClient("https://{0}:{1}".format(
         config['homeserver'], int(config['port'])), **loginargs)
     if 'token' not in config:
         token = client.login_with_password(
             username=config['username'], password=config['password'])
         logging.info("Authenticated, received token: \"%s\"", token)
+
     room = client.join_room('{0}:{1}'.format(
         config['room'], config['domain']))
     return client, room
