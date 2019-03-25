@@ -6,7 +6,7 @@ This script expects the `matrix_zabbix_bot' import is available.
 import re
 import logging
 import locale
-from matrix_zabbix_bot import matrix
+import matrix
 
 
 def colorize(color_config, message):
