@@ -337,8 +337,9 @@ def _dnsjedi_chunks_summary(zabbix_config):
     clustermanagers = zabbix.get_itemvalues_for_group(
         zabbix_config, 'Clustermanagers',
         ['cms.chunks_left',
-         'cms.co_queue_len_forecast',
+         'cms.estimated_end_time',
          ])
+    logging.debug('clustermanagers: %s', clustermanagers)
 
     if clustermanagers is not None:
         for name, value in sorted(clustermanagers.items()):
