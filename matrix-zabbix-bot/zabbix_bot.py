@@ -6,6 +6,7 @@ import argparse
 import datetime
 import logging
 import time
+import yaml
 from matrix_bot_api.matrix_bot_api import MatrixBotAPI
 from matrix_bot_api.mregex_handler import MRegexHandler
 
@@ -22,9 +23,9 @@ def _room_init(room):
     :type room: matrix room object
     :return: room_id, zabbix_config
     """
-    room_id = room.room_id.split(':')[0]
+    room_id = room.room_id
     logging.debug('got a message from room: %s', room_id)
-    if room_id in config:
+    if room_id in config['zabbix-bot']:
         zabbix_config = _zabbix_config(room_id)
 
     else:
@@ -40,9 +41,8 @@ def _zabbix_config(room_id):
     :type room_id: str
     :return: zabbix config directionary
     """
-    zabbix_realm = config[room_id]
-    zabbix_config = matrix.read_config(config['config'],
-                                       zabbix_realm)
+    zabbix_realm = config['zabbix-bot'][room_id]
+    zabbix_config = config['zabbix'][zabbix_realm]
     logging.debug('using zabbix realm: %s\nconfig:\n%s',
                   zabbix_realm, zabbix_config)
     return zabbix_config
@@ -64,23 +64,6 @@ def _error(matrix_config, room, error):
         str(error))
     matrix_config['message'] = message
     matrix.send_message(matrix_config, room)
-
-
-def flags():
-    """Parses the arguments given.
-
-    :return: dictionary of the arguments
-    """
-    parser = argparse.ArgumentParser(description='Zabbix bot for Matrix.')
-    parser.add_argument('-c', '--config', type=str, dest='config',
-                        default='/etc/matrix-zabbix-bot.conf',
-                        help=('specifies the config file '
-                              '(defaults to '
-                              '/etc/matrix-zabbix-bot.conf)'))
-    parser.add_argument('-d', '--debug', action='store_const', dest='debug',
-                        const=True, default=False,
-                        help='enables the debug output')
-    return vars(parser.parse_args())
 
 
 def _zabbix_help():
@@ -120,7 +103,7 @@ def _zabbix_unacked_triggers(zabbix_config):
     messages = []
     triggers = zabbix.get_unacked_triggers(zabbix_config)
     color_config = {}
-    for key, value in matrix.read_config(config['config'], 'Colors').items():
+    for key, value in matrix.read_config(config['config'])['colors'].items():
         if key.startswith('zabbix'):
             key = key.replace('zabbix_', '')
             color_config[key] = value
@@ -443,7 +426,31 @@ def dnsjedi_callback(room, event):
         return _error(matrix_config, room, error)
 
 
+def flags():
+    """Parses the arguments given.
+
+    :return: dictionary of the arguments
+    """
+    parser = argparse.ArgumentParser(description='Zabbix bot for Matrix.')
+    parser.add_argument('-c', '--config', type=str, dest='config',
+                        default='/etc/zabbix-bot.yaml',
+                        help=('specifies the config file '
+                              '(defaults to '
+                              '/etc/zabbix-bot.yaml)'))
+    parser.add_argument('-d', '--debug', action='store_const', dest='debug',
+                        const=True, default=False,
+                        help='enables the debug output')
+    return vars(parser.parse_args())
+
+
 def main():
+    """Main function.
+    """
+    zabbix.logging = logging
+    matrix.logging = logging
+    config['config'] = args['config']
+    logging.debug('config:\n%s', config)
+
     # Create an instance of the MatrixBotAPI
     logging.debug('matrix config:\n%s', matrix_config)
     homeserver = "https://{server}:{port}".format(
@@ -471,6 +478,8 @@ def main():
 
 
 if __name__ == "__main__":
+    # TODO: Move out of global scope
+    # while accesible to callback functions.
     args = flags()
     if args['debug'] is True:
         set_log_level('DEBUG')
@@ -478,10 +487,7 @@ if __name__ == "__main__":
     else:
         set_log_level()
 
-    zabbix.logging = logging
-    matrix.logging = logging
-    config = matrix.read_config(args['config'], 'Zabbix-Bot')
-    config['config'] = args['config']
-    matrix_config = matrix.read_config(args['config'], 'Matrix')
-    logging.debug('config:\n%s', config)
+    config = matrix.read_config(args['config'])
+    matrix_config = config['matrix']
+
     main()

@@ -51,14 +51,14 @@ if __name__ == '__main__':
             raise
 
     color_config = {}
-    for key, value in matrix.read_config(args['config'], 'Colors').items():
+    for key, value in config['colors'].items():
         if key.startswith('zabbix'):
             key = key.replace('zabbix_', '')
             color_config[key] = value
 
     logging.debug(color_config)
-    config['message'] = colorize(color_config, config['message'])
-    client, room = matrix.setup(config)
-    matrix.send_message(config, room)
+    config['matrix']['message'] = colorize(color_config, config['message'])
+    client, room = matrix.setup(config['matrix'])
+    matrix.send_message(config['matrix'], room)
     if 'token' not in config:
         client.logout()

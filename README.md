@@ -7,9 +7,9 @@ For this the [pyzabbix][1] and the [matrix-python-sdk][2] are used.
 The Matrix SDK wrapper script makes sending
 messages to a Matrix room easier. For example:
 
-`python3 matrix.py -c matrix_example.conf Hello I am a test message`
+`python3 matrix.py -c matrix_example.yaml Hello I am a test message`
 
-Sends a test message to the room configured in the matrix_example.conf file.
+Sends a test message to the room configured in the matrix_example.yaml file.
 
 ## Zabbix API wrapper
 While the pyzabbix itself is a wrapper, I wrote a wrapper for pyzabbix to make

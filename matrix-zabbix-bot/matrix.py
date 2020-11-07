@@ -6,11 +6,17 @@ Description:    Simple wrapper around matrix-python-sdk. Makes sending messages
 Matrix-Python-SDK: https://github.com/matrix-org/matrix-python-sdk
 """
 import argparse
-import configparser
 import imp
 import logging
 import os
+
 from matrix_client.client import MatrixClient
+from yaml import load
+try:
+    from yaml import CLoader as Loader
+
+except ImportError:
+    from yaml import Loader
 
 
 def flags():
@@ -28,9 +34,9 @@ def flags():
     parser.add_argument('-p', '--password', type=str, dest='password',
                         help='password to use (overrides the config)')
     parser.add_argument('-c', '--config', type=str, dest='config',
-                        default='/etc/zabbix-bot.conf',
+                        default='/etc/zabbix-bot.yaml',
                         help=('specifies the config file '
-                              '(defaults to /etc/matrix.conf)'))
+                              '(defaults to /etc/zabbix-bot.yaml)'))
     parser.add_argument('-t', '--type', type=str, dest='message_type',
                         help=('sets the message type'))
     parser.add_argument('-d', '--debug', action='store_const', dest='debug',
@@ -39,7 +45,7 @@ def flags():
     return vars(parser.parse_args())
 
 
-def read_config(config_file, conf_section='Matrix'):
+def read_config(config_file):
     """Reads a matrix config file.
 
     :param config_file: path to the config file
@@ -53,11 +59,10 @@ def read_config(config_file, conf_section='Matrix'):
         raise FileNotFoundError('config file "{0}" not found'.format(
             config_file))
 
-    config = configparser.ConfigParser()
-    config.optionxform = str
-    config.read(config_file)
-    return {key: value for key, value in config[conf_section].items()}
+    with open(config_file, 'r') as file_descriptor:
+        config = load(file_descriptor, Loader=Loader)
 
+    return config
 
 def merge_config(args, config):
     """This function merges the args and the config together.
@@ -73,8 +78,8 @@ def merge_config(args, config):
         if value is not None:
             config[key] = value
 
-    if 'domain' not in config:
-        config['domain'] = config['homeserver']
+    if 'domain' not in config['matrix']:
+        config['matrix']['domain'] = config['matrix']['homeserver']
 
     return config
 

@@ -8,6 +8,7 @@ import imp
 import argparse
 import logging
 import configparser
+import matrix
 from matrix_client.client import MatrixClient
 
 
@@ -24,55 +25,15 @@ def flags():
     parser.add_argument('-p', '--password', type=str, dest='password',
                         help='password to use (overrides the config)')
     parser.add_argument('-c', '--config', type=str, dest='config',
-                        default='/etc/zabbix-bot.conf',
+                        default='/etc/zabbix-bot.yaml',
                         help=('specifies the config file '
-                              '(defaults to /etc/matrix.conf)'))
+                              '(defaults to /etc/zabbix-bot.yaml)'))
     parser.add_argument('-t', '--type', type=str, dest='message_type',
                         help=('sets the message type'))
     parser.add_argument('-d', '--debug', action='store_const', dest='debug',
                         const=True, default=False,
                         help='enables the debug output')
     return vars(parser.parse_args())
-
-
-def read_config(config_file, conf_section='Matrix'):
-    """Reads a matrix config file.
-
-    :param config_file: path to the config file
-    :type config_file: str
-    :param conf_section: section of the config file to read
-    :type conf_section: str
-    :return: config dictionary
-    """
-    config_file = os.path.expanduser(config_file)
-    if os.path.isfile(config_file) is False:
-        raise FileNotFoundError('config file "{0}" not found'.format(
-            config_file))
-
-    config = configparser.ConfigParser()
-    config.optionxform = str
-    config.read(config_file)
-    return {key: value for key, value in config[conf_section].items()}
-
-
-def merge_config(args, config):
-    """This function merges the args and the config together.
-    The command line arguments are prioritized over the configured values.
-
-    :param args: command line arguments
-    :type args: dict
-    :param config: option from the config file
-    :type config: dict
-    :return: dict with values merged
-    """
-    for key, value in args.items():
-        if value is not None:
-            config[key] = value
-
-    if 'domain' not in config:
-        config['domain'] = config['homeserver']
-
-    return config
 
 
 def set_log_level(level='INFO'):
@@ -108,7 +69,7 @@ if __name__ == '__main__':
         set_log_level()
 
     try:
-        config = merge_config(args, read_config(args['config']))
+        config = matrix.merge_config(args, matrix.read_config(args['config']))
 
     except FileNotFoundError:
         config = args
@@ -116,4 +77,4 @@ if __name__ == '__main__':
             raise
 
     logging.debug('config: %s', config)
-    get_token(config)
+    get_token(config['matrix'])

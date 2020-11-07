@@ -1,3 +1,3 @@
 __pycache__/**
-matrix-zabbix-bot/conf/*.conf
+matrix-zabbix-bot/conf/*.yaml
 watch.sh
