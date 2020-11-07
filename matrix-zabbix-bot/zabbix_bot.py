@@ -6,6 +6,8 @@ import argparse
 import datetime
 import logging
 import time
+import pdb
+
 import yaml
 from matrix_bot_api.matrix_bot_api import MatrixBotAPI
 from matrix_bot_api.mregex_handler import MRegexHandler
@@ -285,10 +287,12 @@ def main():
     logging.debug('matrix config:\n%s', matrix_config)
     homeserver = "https://{server}:{port}".format(
         server=matrix_config['homeserver'], port=int(matrix_config['port']))
+    rooms = list(config['zabbix-bot'].keys())
     bot = MatrixBotAPI(
         matrix_config['username'],
         matrix_config['password'],
-        homeserver)
+        homeserver,
+        rooms=rooms)
 
     # Add a !zabbix handler
     zabbix_handler = MRegexHandler("^!zabbix", zabbix_callback)
