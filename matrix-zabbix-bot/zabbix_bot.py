@@ -45,8 +45,6 @@ def _zabbix_config(room_id):
     """
     zabbix_realm = config['zabbix-bot'][room_id]
     zabbix_config = config['zabbix'][zabbix_realm]
-    logging.debug('using zabbix realm: %s\nconfig:\n%s',
-                  zabbix_realm, zabbix_config)
     return zabbix_config
 
 
@@ -281,10 +279,8 @@ def main():
     zabbix.logging = logging
     matrix.logging = logging
     config['config'] = args['config']
-    logging.debug('config:\n%s', config)
 
     # Create an instance of the MatrixBotAPI
-    logging.debug('matrix config:\n%s', matrix_config)
     homeserver = "https://{server}:{port}".format(
         server=matrix_config['homeserver'], port=int(matrix_config['port']))
     rooms = list(config['zabbix-bot'].keys())

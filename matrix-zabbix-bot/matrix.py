@@ -100,7 +100,6 @@ def setup(config):
     if 'token' not in config:
         client.login_with_password(
             username=config['username'], password=config['password'])
-        logging.info("Authenticated, received token: \"%s\"", token)
 
     room = client.join_room('{0}:{1}'.format(
         config['room'], config['domain']))

@@ -72,7 +72,6 @@ def init(config):
     :type config: dict
     :return: ZabbixAPI reference
     """
-    logging.debug(config)
     zapi = ZabbixAPI(config['host'])
     zapi.login(config['username'], config['password'])
     return zapi
