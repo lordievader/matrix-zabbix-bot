@@ -78,8 +78,9 @@ def merge_config(args, config):
         if value is not None:
             config[key] = value
 
-    if 'domain' not in config['matrix']:
-        config['matrix']['domain'] = config['matrix']['homeserver']
+    if 'matrix' in config:
+        if 'domain' not in config['matrix']:
+            config['matrix']['domain'] = config['matrix']['homeserver']
 
     return config
 
@@ -97,7 +98,7 @@ def setup(config):
     client = MatrixClient("https://{0}:{1}".format(
         config['homeserver'], int(config['port'])), **loginargs)
     if 'token' not in config:
-        token = client.login_with_password(
+        client.login_with_password(
             username=config['username'], password=config['password'])
         logging.info("Authenticated, received token: \"%s\"", token)
 

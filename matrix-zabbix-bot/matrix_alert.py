@@ -6,6 +6,7 @@ This script expects the `matrix_zabbix_bot' import is available.
 import re
 import logging
 import locale
+import pdb
 import matrix
 
 
@@ -44,6 +45,7 @@ if __name__ == '__main__':
 
     try:
         config = matrix.merge_config(args, matrix.read_config(args['config']))
+        config['matrix'] = matrix.merge_config(args, config['matrix'])
 
     except FileNotFoundError:
         config = args
@@ -60,5 +62,6 @@ if __name__ == '__main__':
     config['matrix']['message'] = colorize(color_config, config['message'])
     client, room = matrix.setup(config['matrix'])
     matrix.send_message(config['matrix'], room)
-    if 'token' not in config:
-        client.logout()
+    if 'token' not in config['matrix']:
+        print('logging out')
+        #client.logout()

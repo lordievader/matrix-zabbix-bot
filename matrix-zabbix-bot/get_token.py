@@ -4,7 +4,6 @@ Description:    Simple script to login with a given username and password and
                 return an access token.
 """
 import os
-import imp
 import argparse
 import logging
 import configparser
@@ -43,7 +42,6 @@ def set_log_level(level='INFO'):
     :param level: level to be passed to logging (defaults to 'INFO')
     :type level: str
     """
-    imp.reload(logging)
     logging.basicConfig(format='%(asctime)s: %(levelname)8s - %(message)s',
                         level=level)
 
@@ -54,9 +52,12 @@ def get_token(config):
     loginargs = {}
     client = MatrixClient("https://{0}:{1}".format(
         config['homeserver'], int(config['port'])), **loginargs)
-    token = client.login_with_password(
-        username=config['username'], password=config['password'])
-    logging.info("Authenticated, add the following to your config:\n token = %s", token)
+    token = client.login(
+        username=config['username'],
+        password=config['password'],
+        device_id='zabbixbot'
+    )
+    logging.info("Authenticated, add the following to your config:\ntoken: %s", token)
     return token
 
 

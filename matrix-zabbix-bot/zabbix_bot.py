@@ -288,11 +288,19 @@ def main():
     homeserver = "https://{server}:{port}".format(
         server=matrix_config['homeserver'], port=int(matrix_config['port']))
     rooms = list(config['zabbix-bot'].keys())
+    token = None
+    username = matrix_config['username']
+    if 'token' in matrix_config:
+        token = matrix_config['token']
+        username = matrix_config['user_id']
+
     bot = MatrixBotAPI(
-        matrix_config['username'],
+        username,
         matrix_config['password'],
         homeserver,
-        rooms=rooms)
+        rooms=rooms,
+        token=token,
+    )
 
     # Add a !zabbix handler
     zabbix_handler = MRegexHandler("^!zabbix", zabbix_callback)
