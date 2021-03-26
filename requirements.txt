@@ -1,4 +1,4 @@
 git+git://github.com/shawnanastasio/python-matrix-bot-api@1a2d2cd5bb8737c0835a532e684c0bb6a437b565#egg=matrix-bot-api
 matrix-client==0.3.2
 pyzabbix==0.7.4
-PyYaml==5.3.1
+PyYaml==5.4
